@@ -30,8 +30,8 @@ BiLinearInterpolator blp;
 int initiated = false;
 
 int NOISE_THLD = 10;
-int COORDINATE_W = 480;
-int COORDINATE_H = 360;
+int COORDINATE_W = 400;
+int COORDINATE_H = 400;
 
 GData basicNorth = GData(-1, -1, -1);
 GData basicSouth = GData(-1, -1, -1);
