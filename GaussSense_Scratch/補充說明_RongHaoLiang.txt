@@ -1,0 +1,24 @@
+首先請下載GaussSense for Scratch Extension: (感謝文宏老師提供）
+接著進行以下步驟：
+1.打開/arduino_firmware/Mini_GaussSense_V2BasicBipolarPoint.ino（文宏老師目前的版本）
+  注意請將以下兩個變數設回400，輸出的x,y與角度值才不會有偏差
+  int COORDINATE_W = 400;
+  int COORDINATE_H = 400;
+  修改完成後，上傳至Arduino。
+2.安裝Scratch2: https://scratch.mit.edu/scratch2download/
+3.安裝python3: https://www.python.org/downloads/ 
+4.安裝pip以及pyserial: 若電腦是Mac，則請使用以下流程安裝pip以及pyserial
+  --
+  sudo easy_install pip
+  python3 -m pip install --upgrade pip
+  python3 -m pip install pyserial 
+  ls /dev/tty.* //列出現有的serial port，找到arduino
+  python3 GaussSense_helper.py /dev/tty.usbmodem1411
+  --
+  看到以下訊息即告完成
+  連接序列埠 :  /dev/tty.usbmodem1411
+  啟動 -- 伺服程式 : ('localhost', 50100)
+5.回到scratch2，按著shift點file選單的 import experimental HTTP extension
+  輸入GaussSense_Scratch/scratch_helper.s2e後，即可在More Blocks中看到相關物件，
+  當Arduino連接，且GaussSEnse_helper.py順利運作時，
+  即可取用Mini GaussSense資料。
