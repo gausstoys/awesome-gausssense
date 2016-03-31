@@ -1,0 +1,11 @@
+{
+  "name": "GaussSense_Node",
+  "version": "0.0.1",
+  "description": "GaussSense Node.js Socket.io Example",
+  "author": "Han-Chih Kuo <andikan.io@gmail.com>",
+  "dependencies": {
+    "express": "^4.13.4",
+    "serialport": "^2.0.6",
+    "socket.io": "^1.4.5"
+  }
+}
