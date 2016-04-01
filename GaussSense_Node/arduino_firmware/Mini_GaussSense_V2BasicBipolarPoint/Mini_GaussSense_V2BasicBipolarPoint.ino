@@ -1,4 +1,4 @@
-/*  MINI GAUSSSENSE - ARDUINO MODE (VER. 3)
+/*  MINI GAUSSSENSE - ARDUINO MODE (VER. 2)
     Copyright (C) <2016> <GAUSSTOYS INC., TAIWAN (http://gausstoys.com)>
     Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
     The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -42,9 +42,9 @@ int NOISE_THLD = 10;
 int COORDINATE_W = 400;
 int COORDINATE_H = 400;
 
-GData basicNorth = GData(-1, -1, 0);
-GData basicSouth = GData(-1, -1, 0);
-GData basicBipolar = GData(-1, -1, 0, 0, 0);
+GData basicNorth = GData(-1, -1, -1);
+GData basicSouth = GData(-1, -1, -1);
+GData basicBipolar = GData(-1, -1, -1);
 
 void setup()
 {
@@ -67,31 +67,18 @@ void loop()
     basicSouth = getBasicSouthPoint(COORDINATE_W, COORDINATE_H);
     basicBipolar = getBasicBipolarPoint(basicNorth, basicSouth, COORDINATE_W, COORDINATE_H);
     
-    Serial.print("NX:");
-    Serial.print((int)basicNorth.getX());
-    Serial.print(", NY:");
-    Serial.print((int)basicNorth.getY());
-    Serial.print(", NI:");
-    Serial.print((int)(basicNorth.getIntensity() * 200 / 127));
-
-    Serial.print(", SX:");
-    Serial.print((int)basicSouth.getX());
-    Serial.print(", SY:");
-    Serial.print((int)basicSouth.getY());
-    Serial.print(", SI:");
-    Serial.print((int)(basicSouth.getIntensity() * 200 / 127));
-
-    Serial.print(", BX:");
-    Serial.print((int)basicBipolar.getX());
-    Serial.print(", BY:");
-    Serial.print((int)basicBipolar.getY());
-    Serial.print(", BI:");
-    Serial.print((int)(basicBipolar.getIntensity() * 200 / 127));
-    Serial.print(", BR:");
+    Serial.print("N:");    
+    printGData(basicNorth);
+//    Serial.print((int)(basicNorth.getIntensity() * 200 / 127));
+    Serial.print("S:");
+    printGData(basicSouth);
+//    Serial.print((int)(basicSouth.getIntensity() * 200 / 127));
+    Serial.print("B:");
+    printGData(basicBipolar);
+    Serial.print(" Roll:");
     Serial.print((int)basicBipolar.getAngle());
-    Serial.print(", BT:");
+    Serial.print(" Tilt:");
     Serial.print((int)basicBipolar.getPitch());
-
     Serial.print('\n');
   }
 }
@@ -123,7 +110,7 @@ void getGaussSenseData() { //Function for getting data from all GaussSense modul
 }
 
 GData getBasicBipolarPoint(GData gN, GData gS, int w, int h) {
-  GData gB = GData(-1, -1, 0, 0, 0);
+  GData gB = GData(-1, -1, -1, 0, 0);
   if (gN.getIntensity() > NOISE_THLD || gS.getIntensity() > NOISE_THLD) {
     float midX = (gN.getX() + gS.getX())/2;
     float midY = (gN.getY() + gS.getY())/2;
@@ -136,7 +123,7 @@ GData getBasicBipolarPoint(GData gN, GData gS, int w, int h) {
 }
 
 GData getBasicNorthPoint(int w, int h) {
-  GData g = GData(-1, -1, 0);
+  GData g = GData(-1, -1, -1);
   float weighted_x = 0;
   float weighted_y = 0;
   float maxIntensity = 0;
@@ -152,19 +139,14 @@ GData getBasicNorthPoint(int w, int h) {
       }
     }
   }
-  if(maxIntensity>0){
-    weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
-    weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
-  }else{
-    weighted_x = -1;
-    weighted_y = -1;
-  }
+  weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
+  weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
   g.set(weighted_x, weighted_y, maxIntensity);
   return g;
 }
 
 GData getBasicSouthPoint(int w, int h) {
-  GData g = GData(-1, -1, 0);
+  GData g = GData(-1, -1, -1);
   float weighted_x = 0;
   float weighted_y = 0;
   float minIntensity = 0;
@@ -180,13 +162,8 @@ GData getBasicSouthPoint(int w, int h) {
       }
     }
   }
-  if(minIntensity<0){
-    weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
-    weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
-  }else{
-    weighted_x = -1;
-    weighted_y = -1;
-  }
+  weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
+  weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
   g.set(weighted_x, weighted_y, minIntensity);
   return g;
 }
