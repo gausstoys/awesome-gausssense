@@ -31,12 +31,17 @@ class Handler(BaseHTTPRequestHandler):
                 for i in temp_list:
                     value.append(i.split(':')[1])
 
-                result = 'N ' + value[0] + '\r\n'
-                result = result + 'S ' + value[1] + '\r\n'
-                result = result + 'X ' + value[2] + '\r\n'
-                result = result + 'Y ' + value[3] + '\r\n'
-                result = result + 'Roll ' + value[4] + '\r\n'
-                result = result + 'Tilt ' + value[5] + '\r\n'
+                result = 'NX ' + value[0] + '\r\n'
+                result = result + 'NY ' + value[1] + '\r\n'
+                result = result + 'NI ' + value[2] + '\r\n'
+                result = result + 'SX ' + value[3] + '\r\n'
+                result = result + 'SY ' + value[4] + '\r\n'
+                result = result + 'SI ' + value[5] + '\r\n'
+                result = result + 'BX ' + value[6] + '\r\n'
+                result = result + 'BY ' + value[7] + '\r\n'
+                result = result + 'BI ' + value[8] + '\r\n'
+                result = result + 'BR ' + value[9] + '\r\n'
+                result = result + 'BT ' + value[10] + '\r\n'
                 
                 #print(result)
                  

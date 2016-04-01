@@ -1,4 +1,4 @@
-/*  MINI GAUSSSENSE - ARDUINO MODE (VER. 2)
+/*  MINI GAUSSSENSE - ARDUINO MODE (VER. 3)
     Copyright (C) <2016> <GAUSSTOYS INC., TAIWAN (http://gausstoys.com)>
     Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
     The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -8,15 +8,24 @@
 #include "BicubicInterpolator.h"
 #include "BiLinearInterpolator.h"
 #include "GData.h"
-#define ADC_RESOLUTION_BITNUM 10
-#define UPSAMPLE_RATE 3
 
-const int MINI_GAUSSSENSE_AMOUNT = 1;     //Set the amount of Mini GaussSense
+/*If using 1 GaussSense*/
+//const int MINI_GAUSSSENSE_AMOUNT = 1;     
+//const int GS_ARRAY_W = 1;
+//const int GS_ARRAY_H = 1;
+//const int UPSAMPLE_RATE = 3;
+
+/*If using 2x2 GaussSense Shield*/
+const int MINI_GAUSSSENSE_AMOUNT = 4;     
+const int GS_ARRAY_W = 2;
+const int GS_ARRAY_H = 2;
+const int UPSAMPLE_RATE = 1;
+
 const int analogInPin[] = {A0, A1, A2, A3};       //Set the analog pins used
 const int selectionPin[]  = {2, 3, 4, 5};  //Set the selection pins used
 
-const int RAW_W = 4 * MINI_GAUSSSENSE_AMOUNT;
-const int RAW_H = 4;
+const int RAW_W = 4 * GS_ARRAY_W;
+const int RAW_H = 4 * GS_ARRAY_H;
 const int SAMPLE_W = UPSAMPLE_RATE * (RAW_W - 1);
 const int SAMPLE_H = UPSAMPLE_RATE * (RAW_H - 1);
 
@@ -33,9 +42,9 @@ int NOISE_THLD = 10;
 int COORDINATE_W = 400;
 int COORDINATE_H = 400;
 
-GData basicNorth = GData(-1, -1, -1);
-GData basicSouth = GData(-1, -1, -1);
-GData basicBipolar = GData(-1, -1, -1);
+GData basicNorth = GData(-1, -1, 0);
+GData basicSouth = GData(-1, -1, 0);
+GData basicBipolar = GData(-1, -1, 0, 0, 0);
 
 void setup()
 {
@@ -53,30 +62,46 @@ void loop()
     upSampling(UPSAMPLE_RATE);
 //    printRawData();
 //    printUpsampledData();
+
     basicNorth = getBasicNorthPoint(COORDINATE_W, COORDINATE_H);
     basicSouth = getBasicSouthPoint(COORDINATE_W, COORDINATE_H);
     basicBipolar = getBasicBipolarPoint(basicNorth, basicSouth, COORDINATE_W, COORDINATE_H);
     
-//    Serial.print("N:");
-//    Serial.print((int)(basicNorth.getIntensity() * 200 / 127));
-//    Serial.print(" Gauss; S:");
-//    Serial.print((int)(basicSouth.getIntensity() * 200 / 127));
-//    Serial.print(" Gauss; Bipolar:");
-      printGData(basicBipolar);
-//    Serial.print(" Roll:");
-//    Serial.print(basicBipolar.getAngle());
-//    Serial.print(" Tilt:");
-//    Serial.print(basicBipolar.getPitch());
-//    Serial.print('\n');
+    Serial.print("NX:");
+    Serial.print((int)basicNorth.getX());
+    Serial.print(", NY:");
+    Serial.print((int)basicNorth.getY());
+    Serial.print(", NI:");
+    Serial.print((int)(basicNorth.getIntensity() * 200 / 127));
+
+    Serial.print(", SX:");
+    Serial.print((int)basicSouth.getX());
+    Serial.print(", SY:");
+    Serial.print((int)basicSouth.getY());
+    Serial.print(", SI:");
+    Serial.print((int)(basicSouth.getIntensity() * 200 / 127));
+
+    Serial.print(", BX:");
+    Serial.print((int)basicBipolar.getX());
+    Serial.print(", BY:");
+    Serial.print((int)basicBipolar.getY());
+    Serial.print(", BI:");
+    Serial.print((int)(basicBipolar.getIntensity() * 200 / 127));
+    Serial.print(", BR:");
+    Serial.print((int)basicBipolar.getAngle());
+    Serial.print(", BT:");
+    Serial.print((int)basicBipolar.getPitch());
+
+    Serial.print('\n');
   }
 }
 
 void initSensor() {
   for (int x = 0; x < 16; x++) {
     for (int n = 0; n < MINI_GAUSSSENSE_AMOUNT ; n++) {
-      int ix = (x % 4);
-      int iy = (x / 4);
-      initSensorVal[ix + n * 4][iy] = sensorVal[ix + n * 4][iy];
+      int ix = (x % 4) + (n%GS_ARRAY_W)*4;
+      int iy = (x / 4) + (n/GS_ARRAY_H)*4;
+      initSensorVal[ix][iy] = sensorVal[ix][iy];
     }
   }
 }
@@ -89,16 +114,16 @@ void getGaussSenseData() { //Function for getting data from all GaussSense modul
       digitalWrite(selectionPin[i], muxBits[i]);
     }
     for (int n = 0; n < MINI_GAUSSSENSE_AMOUNT ; n++) {
-      int ix = (x % 4);
-      int iy = (x / 4);
-      int v = analogRead(analogInPin[n]) - pow(2, ADC_RESOLUTION_BITNUM - 1) ;
-      sensorVal[ix + n * 4][iy] = constrain((v - initSensorVal[ix + n * 4][iy]) , -127, 127);
+      int ix = (x % 4) + (n%GS_ARRAY_W)*4;
+      int iy = (x / 4) + (n/GS_ARRAY_H)*4;
+      int v = analogRead(analogInPin[n]) - 512;
+      sensorVal[ix][iy] = constrain((v - initSensorVal[ix][iy]) , -127, 127);
     }
   }
 }
 
 GData getBasicBipolarPoint(GData gN, GData gS, int w, int h) {
-  GData gB = GData(-1, -1, -1);
+  GData gB = GData(-1, -1, 0, 0, 0);
   if (gN.getIntensity() > NOISE_THLD || gS.getIntensity() > NOISE_THLD) {
     float midX = (gN.getX() + gS.getX())/2;
     float midY = (gN.getY() + gS.getY())/2;
@@ -111,7 +136,7 @@ GData getBasicBipolarPoint(GData gN, GData gS, int w, int h) {
 }
 
 GData getBasicNorthPoint(int w, int h) {
-  GData g = GData(-1, -1, -1);
+  GData g = GData(-1, -1, 0);
   float weighted_x = 0;
   float weighted_y = 0;
   float maxIntensity = 0;
@@ -127,14 +152,19 @@ GData getBasicNorthPoint(int w, int h) {
       }
     }
   }
-  weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
-  weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
+  if(maxIntensity>0){
+    weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
+    weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
+  }else{
+    weighted_x = -1;
+    weighted_y = -1;
+  }
   g.set(weighted_x, weighted_y, maxIntensity);
   return g;
 }
 
 GData getBasicSouthPoint(int w, int h) {
-  GData g = GData(-1, -1, -1);
+  GData g = GData(-1, -1, 0);
   float weighted_x = 0;
   float weighted_y = 0;
   float minIntensity = 0;
@@ -150,24 +180,25 @@ GData getBasicSouthPoint(int w, int h) {
       }
     }
   }
-  weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
-  weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
+  if(minIntensity<0){
+    weighted_x = (weighted_x / totalWeights) * (w / (SAMPLE_W - 1));
+    weighted_y = (weighted_y / totalWeights) * (h / (SAMPLE_H - 1));
+  }else{
+    weighted_x = -1;
+    weighted_y = -1;
+  }
   g.set(weighted_x, weighted_y, minIntensity);
   return g;
 }
 
 void printGData(GData g) {
-//  Serial.print("(x,y) = (");
+  Serial.print("(x,y) = (");
   Serial.print((int)g.getX());
   Serial.print(",");
   Serial.print((int)g.getY());
-  Serial.print(",");
-//  Serial.print("） ");
+  Serial.print(") ");
   Serial.print((int)(g.getIntensity() * 200 / 127));
-  Serial.print(",");
-  Serial.print((int)g.getAngle());
-  Serial.print("\n");
-//  Serial.print(" Gauss;");
+  Serial.print(" Gauss;");
 }
 
 void printRawData() { //Function for writing data to the serial port
